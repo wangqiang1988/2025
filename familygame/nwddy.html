@@ -10,73 +10,58 @@
         :root {
             font-family: 'Inter', sans-serif;
         }
-        /* 确保 body 和 html 占据整个视口，并且绝对不滚动 */
+        
+        /* ------------------ 核心修正 1：允许页面滚动 ------------------ */
+        /* 允许内容在窗口过小时向下溢出并出现垂直滚动条 */
         html, body {
-            height: 100%;
-            overflow: hidden; /* 关键：禁用主页面滚动 */
+            min-height: 100%; 
         }
-
+        
+        /* ------------------ 核心修正 2：移除强制等比缩放的 font-size ------------------ */
+        body {
+            font-size: 16px; 
+        }
+        
         /* 单词卡网格：适应容器大小，保持紧凑，并利用所有垂直空间 */
         .potion-grid {
             display: grid;
-            /* 默认布局：尽可能多地放置卡片，并自动创建行 */
             grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
-            grid-auto-rows: 1fr; /* 确保行高平均分配 */
-            gap: 0.5rem; /* 间隙更小 */
-            height: 100%; /* 占据所有父容器高度 */
-            overflow: hidden; /* 确保不生成滚动条 */
+            grid-auto-rows: 1fr; 
+            gap: 0.5rem; 
+            height: 100%; 
+            overflow: hidden; 
         }
 
         /* 媒体查询：在大屏幕上强制 6 列 x 3 行布局以完美容纳 18 张卡 */
         @media (min-width: 1024px) { /* lg: breakpoint */
             .potion-grid {
-                grid-template-columns: repeat(6, 1fr); /* 6 列 */
-                grid-template-rows: repeat(3, 1fr);  /* 3 行 */
+                grid-template-columns: repeat(6, 1fr); 
+                grid-template-rows: repeat(3, 1fr);  
             }
         }
         
-        /* *** 自定义 h-70 (280px) *** */
-        .h-70 {
-            height: 17.5rem; /* 280px */
+        .top-panel-p {
+            padding: 0.75rem; 
         }
-
+        
         .word-card {
             transition: all 0.2s ease-in-out;
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            padding: 0.25rem; /* 极度压缩填充 */
+            padding: 0.25rem;
             text-align: center;
-            height: 100%; /* 填满网格单元 */
+            height: 100%;
         }
         .text-black-on-white {
              color: #1f2937;
         }
-        
-        /* 允许日志和玩家列表内部滚动，以保持外部布局紧凑 */
-        .internal-scroll {
-            overflow-y: auto;
-        }
-
-        /* 调整顶部面板的padding */
-        .top-panel-p {
-            padding: 0.75rem; /* p-3 */
-        }
-
-        /* 仅用于模拟内容过多，可删除或保持 */
-        .dummy-content {
-            height: 800px; /* 故意让内容大于容器的固定高度 */
-            background-color: #3f3f46; /* 较暗的背景色 */
-            line-height: 20px;
-            color: #d1d5db;
-            padding: 5px;
-        }
     </style>
 </head>
-<body class="h-screen bg-gray-900 text-white p-2 sm:p-4 flex flex-col">
+<body class="bg-gray-900 text-white p-2 sm:p-4 flex flex-col min-h-full">
 
-    <header class="text-center mb-2 sm:mb-3 flex-shrink-0">
+    <header class="text-center mb-0.5 sm:mb-1 flex-shrink-0">
         <h1 class="text-2xl sm:text-3xl font-extrabold text-indigo-400 tracking-wider">
             <span class="inline-block transform -rotate-6">📚</span> 女巫的毒药单词版
         </h1>
@@ -84,31 +69,16 @@
 
     <main id="game-container" class="max-w-7xl mx-auto w-full flex-grow min-h-0 flex flex-col space-y-2 sm:space-y-3">
         
-        <div class="flex-shrink-0 grid grid-cols-1 lg:grid-cols-3 gap-2 sm:gap-3 h-70 overflow-hidden">
+        <div class="top-panel-group flex-shrink-0 grid grid-cols-1 lg:grid-cols-2 gap-2 sm:gap-3" style="flex-basis: 35%;">
             
-            <div id="status-panel-container" class="h-full overflow-y-auto">
-                <h3>✅ 状态和控制面板</h3>
-                <div class="dummy-content">
-                    内容滚动区域 1... (此处内容故意很多，以触发滚动条)
-                </div>
+            <div id="status-panel-container" class="h-full">
             </div>
 
-            <div id="player-status-container" class="h-full overflow-y-auto">
-                <h3>👤 玩家状态</h3>
-                <div class="dummy-content">
-                    内容滚动区域 2... (此处内容故意很多，以触发滚动条)
-                </div>
-            </div>
-            
-            <div id="game-log-container" class="h-full overflow-y-auto">
-                <h3>📜 游戏日志</h3>
-                <div class="dummy-content">
-                    内容滚动区域 3... (此处内容故意很多，以触发滚动条)
-                </div>
+            <div id="player-status-container" class="h-full">
             </div>
         </div>
 
-        <div id="potion-selection-area" class="bg-gray-800 p-3 rounded-3xl shadow-3xl border-4 border-dashed border-indigo-600 flex-grow min-h-0 hidden flex-col">
+        <div id="potion-selection-area" class="bg-gray-800 p-3 rounded-3xl shadow-3xl border-4 border-dashed border-indigo-600 flex-grow min-h-0 flex flex-col">
             <h2 class="text-xl sm:text-2xl font-bold text-white mb-1 text-center flex-shrink-0">
                 <span id="current-theme-name">单词</span>池 (共 18 张)
             </h2>
@@ -141,14 +111,14 @@
                     { en: 'Gray', cn: '灰色', hex: '#6b7280', id: 'c10' },
                     { en: 'Brown', cn: '棕色', hex: '#78350f', id: 'c11' },
                     { en: 'Cyan', cn: '青色', hex: '#06b6d4', id: 'c12' },
-                    { en: 'Gold', cn: '金色', hex: '#fbbf24', id: 'c13' },
-                    { en: 'Silver', cn: '银色', hex: '#9ca3af', id: 'c14' },
-                    { en: 'Lime', cn: '酸橙绿', hex: '#84cc16', id: 'c15' },
-                    { en: 'Violet', cn: '紫罗兰', hex: '#7c3aed', id: 'c16' },
-                    { en: 'Indigo', cn: '靛青', hex: '#4338ca', id: 'c17' },
-                    { en: 'Teal', cn: '蓝绿', hex: '#14b8a6', id: 'c18' },
-                    { en: 'Maroon', cn: '褐红色', hex: '#800000', id: 'c19' },
-                    { en: 'Navy', cn: '海军蓝', hex: '#000080', id: 'c20' }
+                    { en: 'Gold', cn: '金色', emoji: '🥇', id: 'c13' },
+                    { en: 'Silver', cn: '银色', emoji: '🥈', id: 'c14' },
+                    { en: 'Lime', cn: '酸橙绿', emoji: '🟢', id: 'c15' },
+                    { en: 'Violet', cn: '紫罗兰', emoji: '🟪', id: 'c16' },
+                    { en: 'Indigo', cn: '靛青', emoji: '🟦', id: 'c17' },
+                    { en: 'Teal', cn: '蓝绿', emoji: '💎', id: 'c18' },
+                    { en: 'Maroon', cn: '褐红色', emoji: '🟤', id: 'c19' },
+                    { en: 'Navy', cn: '海军蓝', emoji: '🔵', id: 'c20' }
                 ]
             },
             animals: {
@@ -257,10 +227,9 @@
             }
         };
 
-        // *** 新增：混合主题的计算逻辑 ***
+        // *** 混合主题的计算逻辑 ***
         (() => {
             let allMixedItems = [];
-            // 明确列出要混合的所有主题键
             const combinableKeys = ['colors', 'animals', 'fruits', 'school', 'home']; 
 
             combinableKeys.forEach(key => {
@@ -269,7 +238,6 @@
                 }
             });
 
-            // 添加混合主题到 ALL_THEMES
             ALL_THEMES.mixed = {
                 name: "混合主题 (All Mixed)",
                 items: allMixedItems
@@ -278,7 +246,7 @@
         // ********************************
 
         const MAX_PLAYERS = 4;
-        const CARD_POOL_SIZE = 18; // 每次随机抽取18张卡片
+        const CARD_POOL_SIZE = 18; 
 
         const GAME_STATE = {
             SETUP: 'SETUP',
@@ -291,20 +259,20 @@
         // --- 全局状态 ---
         let gameState = GAME_STATE.SETUP;
         let playerCount = 2; 
-        let currentThemeKey = 'animals'; // 默认动物主题
-        let currentItems = []; // 当前回合使用的 18 个随机单词
+        let currentThemeKey = 'animals'; 
+        let currentItems = []; 
         let players = [];
         let currentPlayerIndex = 0;
         let currentUnravelerIndex = 0;
-        let selectedPotions = {}; // { id: playerId | 'REVEALED' }
+        // selectedPotions 存储 { itemId: [playerId1, playerId2, ...], id2: 'REVEALED', ... }
+        let selectedPotions = {}; 
         let itemToConfirmId = null; 
-        let safePotions = []; // IDs of safe items
-        let gameLog = [];
+        let safePotions = []; 
         let message = '';
+        
 
         // --- 辅助函数 ---
         
-        // 随机抽取 n 个元素的函数
         function shuffle(array) {
             let currentIndex = array.length, randomIndex;
             while (currentIndex !== 0) {
@@ -315,7 +283,6 @@
             return array;
         }
 
-        // 确保从词库中随机抽取 CARD_POOL_SIZE (18) 个项目
         function selectRandomItems(themeKey, count = CARD_POOL_SIZE) {
             const allItems = ALL_THEMES[themeKey].items;
             const shuffled = shuffle([...allItems]);
@@ -331,16 +298,9 @@
             }));
         };
 
-        const getPlayerNameById = (id) => players.find(p => p.id === id)?.name || '未知玩家';
-        
         const getItemName = (id) => {
             const item = currentItems.find(i => i.id === id);
             return item ? `${item.en} (${item.cn})` : '未知';
-        };
-
-        const addLog = (entry) => {
-            gameLog.push(entry);
-            renderGameLog();
         };
 
         const setMessageText = (text) => {
@@ -348,12 +308,104 @@
             renderStatusPanel();
         };
 
+        function isItemPoison(itemId) {
+            const status = selectedPotions[itemId];
+            // 毒药：是数组（存储了玩家ID）
+            return status && Array.isArray(status) && status.length > 0;
+        }
+
         // --- 渲染函数 ---
 
         function renderIcons() {
             if (window.lucide && window.lucide.createIcons) {
                 setTimeout(() => window.lucide.createIcons(), 0);
             }
+        }
+
+        function renderItemCard(item) {
+            const isPoison = isItemPoison(item.id); 
+            const isRevealedPoison = selectedPotions[item.id] === 'REVEALED';
+            
+            let baseClass = 'word-card rounded-xl shadow-lg cursor-pointer transform hover:scale-[1.02] active:scale-[0.98] transition duration-150';
+            let contentClass = 'bg-gray-700/80 text-white border-2 border-gray-600/50';
+            let textClass = 'text-white';
+            let visualContent = '';
+            let dataAction = ''; 
+            
+            // 确定状态和点击行为
+            if (gameState === GAME_STATE.SETUP) {
+                baseClass = 'word-card rounded-xl shadow-lg cursor-default opacity-80';
+                dataAction = '';
+            } else if (gameState === GAME_STATE.POTION_SELECTION) {
+                // 秘密下毒阶段：始终保持卡片外观一致，且可点击 (无黄框)
+                dataAction = `onclick="handleItemSelection('${item.id}')"`;
+                baseClass += ' hover:bg-yellow-800/20'; 
+                
+            } else if (gameState === GAME_STATE.REVEAL_WAIT) {
+                // 揭示等待阶段：不可点击
+                baseClass = 'word-card rounded-xl shadow-lg cursor-default opacity-90';
+                dataAction = '';
+
+            } else if (gameState === GAME_STATE.UNRAVELING) {
+                // 挑战解毒阶段
+                
+                if (isRevealedPoison) {
+                    // 已揭示的毒药：不可点击，显示死亡色
+                    contentClass = 'bg-red-900 border-4 border-red-500 animate-pulse';
+                    dataAction = 'onclick=""'; 
+                    baseClass = 'word-card rounded-xl shadow-lg cursor-default';
+                } else if (!isPoison && !safePotions.includes(item.id)) {
+                    // 已经被朗读的安全词：不可点击，显示绿色边框（已朗读的安全词）
+                    contentClass = 'bg-green-900/50 border-4 border-green-500 opacity-60';
+                    dataAction = 'onclick=""'; 
+                    baseClass = 'word-card rounded-xl shadow-lg cursor-default';
+                } else {
+                    // 待朗读的词汇（毒药或安全词）：可点击
+                    dataAction = `onclick="handleUnravelingChoice('${item.id}')"`;
+                    baseClass += ' hover:scale-[1.05] active:scale-[0.95]';
+                    
+                    // *** 核心修正：无论是毒药还是安全词，待选时的外观保持一致 ***
+                    contentClass = 'bg-gray-700 border-2 border-indigo-400';
+                    baseClass += ' hover:bg-indigo-600/30';
+                }
+            } else if (gameState === GAME_STATE.GAME_OVER) {
+                // 游戏结束状态：不可点击
+                dataAction = 'onclick=""';
+                baseClass = 'word-card rounded-xl shadow-lg cursor-default';
+                if (isRevealedPoison) {
+                    contentClass = 'bg-red-900 border-4 border-red-500';
+                } else if (isPoison) { // 未被揭示的毒药
+                    contentClass = 'bg-red-800/80 border-4 border-red-400';
+                } else {
+                    contentClass = 'bg-gray-700/80 border-2 border-gray-600/50 opacity-80';
+                }
+            }
+
+            // 确定卡片内容
+            if (item.hex) { 
+                visualContent = `<div class="w-8 h-8 rounded-full shadow-md mb-1 border-2 border-white/20" style="background-color: ${item.hex}"></div>`;
+                if (item.hex === '#f3f4f6') { 
+                    textClass = 'text-black-on-white';
+                }
+            } else if (item.emoji) {
+                visualContent = `<div class="text-3xl">${item.emoji}</div>`;
+            }
+
+            const itemContent = `
+                ${visualContent}
+                <div class="text-xs sm:text-sm font-bold ${textClass} tracking-wide leading-tight">${item.en}</div>
+                <div class="text-[10px] sm:text-xs text-gray-400 font-medium mt-0.5">${item.cn}</div>
+            `;
+
+            return `
+                <div class="h-full">
+                    <div class="${baseClass}" ${dataAction}>
+                        <div class="h-full w-full flex flex-col items-center justify-center p-1 rounded-lg ${contentClass} text-center">
+                            ${itemContent}
+                        </div>
+                    </div>
+                </div>
+            `;
         }
 
         function renderPlayerStatus() {
@@ -375,7 +427,7 @@
                     statusText = `<span class="text-green-400 font-bold flex items-center text-[10px] sm:text-xs"><i data-lucide="trophy" class="w-2 h-2 mr-0.5"></i> 获胜</span>`;
                     icon = '<i data-lucide="crown" class="w-3 h-3 sm:w-4 sm:h-4 text-yellow-400"></i>';
                 } else if (isCurrent) {
-                    statusClass = 'bg-indigo-700 border-2 border-indigo-400 ring-2 ring-indigo-300 animate-pulse';
+                    statusClass = 'bg-indigo-700 border-2 border-indigo-400 ring-2 ring-2 ring-indigo-300 animate-pulse';
                     statusText = `<span class="text-indigo-200 font-bold flex items-center text-[10px] sm:text-xs">轮到你了</span>`;
                 }
 
@@ -390,180 +442,34 @@
                 `;
             }).join('');
 
-            // 使用 internal-scroll 允许列表内部滚动
+            const contentHtml = players.length > 0 ? playersHtml : '<p class="text-gray-500 text-center py-4">请在左侧面板设置玩家。</p>';
+
             container.innerHTML = `
                 <div class="bg-gray-800 top-panel-p rounded-2xl shadow-xl border border-gray-700 h-full flex flex-col">
                     <h3 class="text-base sm:text-lg font-bold text-white mb-1 flex items-center space-x-1 flex-shrink-0 border-b border-gray-700 pb-1">
                         <i data-lucide="users" class="w-4 h-4 text-teal-400"></i>
-                        <span>玩家</span>
+                        <span>玩家状态</span>
                     </h3>
-                    <div class="grid grid-cols-2 gap-2 flex-grow min-h-0 internal-scroll p-0.5">
-                        ${playersHtml}
+                    <div class="grid grid-cols-2 gap-2 flex-grow min-h-0 overflow-y-auto p-0.5">
+                        ${contentHtml}
                     </div>
                 </div>
             `;
             renderIcons();
         }
 
-        function renderGameLog() {
-            const container = document.getElementById('game-log-container');
-            
-            // 秘密选择阶段不显示日志
-            if (gameState === GAME_STATE.POTION_SELECTION) {
-                 container.innerHTML = `
-                    <div class="bg-gray-800 top-panel-p rounded-2xl shadow-xl border border-gray-700 h-full flex flex-col items-center justify-center">
-                        <i data-lucide="lock" class="w-6 h-6 text-yellow-400 mb-1"></i>
-                        <span class="text-sm font-medium text-gray-400">秘密选择中...</span>
-                    </div>`;
-                return;
-            }
-
-            let logsToDisplay = gameLog;
-            if (gameState === GAME_STATE.REVEAL_WAIT || gameState === GAME_STATE.UNRAVELING) {
-                logsToDisplay = gameLog.filter(log => !log.startsWith('[秘密选择]'));
-            }
-
-            const logHtml = [...logsToDisplay].reverse().map(log => {
-                let color = 'text-gray-400';
-                if (log.includes('成功朗读')) color = 'text-green-300';
-                if (log.includes('淘汰')) color = 'text-red-300 font-semibold';
-                
-                return `<li class="text-[10px] sm:text-xs ${color} border-b border-gray-700 py-0.5 last:border-b-0">
-                    ${log}
-                </li>`;
-            }).join('');
-
-            // 使用 internal-scroll 允许日志列表内部滚动
-            container.innerHTML = `
-                <div class="bg-gray-800 top-panel-p rounded-2xl shadow-xl border border-gray-700 h-full flex flex-col">
-                    <h3 class="text-base sm:text-lg font-bold text-white mb-1 flex items-center space-x-1 flex-shrink-0 border-b border-gray-700 pb-1">
-                        <i data-lucide="scroll-text" class="w-4 h-4 text-cyan-400"></i>
-                        <span>游戏记录</span>
-                    </h3>
-                    <ul class="space-y-0.5 flex-grow min-h-0 internal-scroll p-0.5">
-                        ${logHtml}
-                    </ul>
-                </div>
-            `;
-            renderIcons();
-        }
-
-        function renderItemCard(item) {
-            const selectedById = selectedPotions[item.id];
-            const isSelected = !!selectedById;
-            
-            // 状态判断
-            const isDeadlyRevealed = selectedById === 'REVEALED';
-            const isSafeConsumed = !isSelected && !safePotions.includes(item.id) && (gameState === GAME_STATE.UNRAVELING || gameState === GAME_STATE.GAME_OVER);
-            
-            let bgClass = 'bg-gray-700';
-            let borderClass = 'border-gray-600';
-            let cursorClass = 'cursor-default';
-            let clickHandler = '';
-            let opacityClass = '';
-
-            // 样式配置
-            const isColorTheme = currentThemeKey === 'colors' || (currentThemeKey === 'mixed' && ALL_THEMES.colors.items.some(i => i.id === item.id));
-            let visualContent = '';
-            let textClass = 'text-white';
-            
-            // 混合主题下，如果是颜色卡片，则按颜色渲染
-            if (item.hex) { 
-                visualContent = `<div class="w-6 h-6 sm:w-8 sm:h-8 rounded-full shadow-md mb-1 border-2 border-white/20" style="background-color: ${item.hex}"></div>`;
-                if (item.hex === '#f3f4f6') { 
-                    textClass = 'text-black-on-white';
-                }
-            } else if (item.emoji) { // 否则按 emoji 渲染
-                visualContent = `<div class="text-xl sm:text-2xl">${item.emoji}</div>`;
-            }
-
-            // 1. 秘密选择阶段
-            if (gameState === GAME_STATE.POTION_SELECTION) {
-                borderClass = 'border-indigo-500/30';
-                
-                if (!isSelected) {
-                    // 可选状态 (点击触发 Modal)
-                    bgClass = 'bg-gray-700 hover:bg-gray-600';
-                    clickHandler = `handleItemSelection('${item.id}')`;
-                    cursorClass = 'cursor-pointer hover:scale-[1.03] hover:shadow-xl';
-                } else {
-                    // 已选状态
-                    bgClass = 'bg-gray-700';
-                    opacityClass = 'opacity-50'; // 已选卡片变暗
-                }
-            } 
-            // 2. 解毒/揭示阶段
-            else if (gameState === GAME_STATE.UNRAVELING || gameState === GAME_STATE.GAME_OVER || gameState === GAME_STATE.REVEAL_WAIT) {
-                if (isDeadlyRevealed) {
-                    bgClass = 'bg-red-900/90';
-                    borderClass = 'border-red-500';
-                    visualContent = `<i data-lucide="skull" class="w-6 h-6 sm:w-8 sm:h-8 text-red-200 mb-1"></i>`;
-                } else if (isSafeConsumed) {
-                    bgClass = 'bg-gray-800';
-                    borderClass = 'border-gray-700';
-                    opacityClass = 'opacity-50 grayscale';
-                } else {
-                    bgClass = 'bg-gray-700 hover:bg-indigo-900';
-                    borderClass = 'border-indigo-500/50';
-                }
-
-                const isAvailable = gameState === GAME_STATE.UNRAVELING && !isDeadlyRevealed && !isSafeConsumed;
-                if (isAvailable) {
-                    clickHandler = `handleUnravelingChoice('${item.id}')`;
-                    cursorClass = 'cursor-pointer hover:scale-[1.03] hover:shadow-xl hover:border-indigo-400';
-                }
-            }
-            
-            // 紧凑的卡片内容
-            const cardContent = `
-                <div class="text-xs sm:text-sm font-bold ${textClass} tracking-wide text-center leading-tight">${item.en}</div>
-                <div class="text-[10px] text-gray-400 mt-0.5 font-medium">${item.cn}</div>
-            `;
-
-            return `
-                <div 
-                    class="word-card relative rounded-xl border-2 flex flex-col items-center justify-center shadow-lg transition duration-200 select-none ${bgClass} ${borderClass} ${cursorClass} ${opacityClass}"
-                    onclick="${clickHandler}"
-                >
-                    ${visualContent}
-                    ${cardContent}
-                    
-                    ${isDeadlyRevealed ? '<div class="absolute inset-0 flex items-center justify-center bg-black/40 rounded-xl"><span class="text-red-400 font-bold text-xs transform -rotate-12 border-2 border-red-500 px-1 py-0.5 rounded">POISON</span></div>' : ''}
-                    ${isSafeConsumed ? '<div class="absolute inset-0 flex items-center justify-center"><i data-lucide="check" class="w-8 h-8 sm:w-10 sm:h-10 text-green-500/50"></i></div>' : ''}
-                </div>
-            `;
-        }
-
-        function renderGrid() {
-            const container = document.getElementById('potions-grid');
-            const themeNameSpan = document.getElementById('current-theme-name');
-            
-            if (!container) return;
-            
-            themeNameSpan.textContent = ALL_THEMES[currentThemeKey].name.split(' ')[0]; // 取中文名
-
-            container.innerHTML = currentItems.map(renderItemCard).join('');
-
-            const area = document.getElementById('potion-selection-area');
-            if (gameState !== GAME_STATE.SETUP) {
-                area.classList.remove('hidden');
-                area.classList.add('flex'); // 确保 flex 布局生效
-            } else {
-                area.classList.add('hidden');
-                area.classList.remove('flex');
-            }
-            renderIcons();
-        }
-
         function renderStatusPanel() {
             const container = document.getElementById('status-panel-container');
             let statusHeader = '';
-            let statusContent = '';
-            
+            let contentBodyHtml = ''; 
+            let buttonHtml = ''; 
+            let bodyClass = 'p-0.5'; 
+            let contentLayout = ''; 
+
             if (gameState === GAME_STATE.SETUP) {
                 statusHeader = '⚙️ 游戏设置';
+                contentLayout = 'space-y-2'; 
                 
-                // 主题选择器 HTML
                 const themeOptions = Object.keys(ALL_THEMES).map(key => 
                     `<option value="${key}" ${currentThemeKey === key ? 'selected' : ''}>${ALL_THEMES[key].name}</option>`
                 ).join('');
@@ -581,99 +487,108 @@
                     </div>
                 `).join('');
 
-                statusContent = `
-                    <div class="space-y-2 flex-grow min-h-0 internal-scroll p-0.5">
-                        <div class="space-y-1">
-                            <label class="block text-xs font-medium text-gray-400">主题/人数</label>
-                            <div class="flex space-x-2">
-                                <select 
-                                    onchange="handleThemeChange(this.value)"
-                                    class="flex-grow p-1 border border-gray-600 rounded-md bg-gray-700 text-white text-xs focus:border-indigo-500 outline-none"
-                                >
-                                    ${themeOptions}
-                                </select>
-                                <select
-                                    value="${playerCount}"
-                                    onchange="handlePlayerCountChange(Number(this.value))"
-                                    class="w-16 p-1 border border-gray-600 rounded-md bg-gray-700 text-white text-xs focus:border-indigo-500 outline-none"
-                                >
-                                    ${[2, 3, 4].map(num => `<option value="${num}" ${playerCount === num ? 'selected' : ''}>${num} 人</option>`).join('')}
-                                </select>
-                            </div>
+                contentBodyHtml = `
+                    <div class="space-y-1">
+                        <label class="block text-xs font-medium text-gray-400">主题/人数</label>
+                        <div class="flex space-x-2">
+                            <select 
+                                onchange="handleThemeChange(this.value)"
+                                class="flex-grow p-1 border border-gray-600 rounded-md bg-gray-700 text-white text-xs focus:border-indigo-500 outline-none"
+                            >
+                                ${themeOptions}
+                            </select>
+                            <select
+                                value="${playerCount}"
+                                onchange="handlePlayerCountChange(Number(this.value))"
+                                class="w-16 p-1 border border-gray-600 rounded-md bg-gray-700 text-white text-xs focus:border-indigo-500 outline-none"
+                            >
+                                ${[2, 3, 4].map(num => `<option value="${num}" ${playerCount === num ? 'selected' : ''}>${num} 人</option>`).join('')}
+                            </select>
                         </div>
-
-                        <div class="bg-gray-700/50 p-2 rounded-lg border border-gray-700">
-                            <h3 class="text-xs font-bold text-gray-300 mb-1">玩家昵称</h3>
-                            <div class="grid grid-cols-2 gap-1">
-                                ${playerInputs}
-                            </div>
-                        </div>
-
-                        <button
-                            onclick="startGame()"
-                            class="w-full py-1.5 bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-bold rounded-lg hover:from-indigo-500 hover:to-purple-500 transition shadow-lg transform active:scale-95 flex items-center justify-center space-x-1 text-sm"
-                        >
-                            <span>开始游戏</span>
-                            <i data-lucide="play" class="w-4 h-4"></i>
-                        </button>
                     </div>
+
+                    <div class="bg-gray-700/50 p-2 rounded-lg border border-gray-700">
+                        <h3 class="text-xs font-bold text-gray-300 mb-1">玩家昵称</h3>
+                        <div class="grid grid-cols-2 gap-1">
+                            ${playerInputs}
+                        </div>
+                    </div>
+                `;
+                
+                buttonHtml = `
+                    <button
+                        onclick="startGame()"
+                        class="w-full py-1.5 bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-bold rounded-lg hover:from-indigo-500 hover:to-purple-500 transition shadow-lg transform active:scale-95 flex items-center justify-center space-x-1 text-sm flex-shrink-0"
+                    >
+                        <span>开始游戏</span>
+                        <i data-lucide="play" class="w-4 h-4"></i>
+                    </button>
                 `;
             } else if (gameState === GAME_STATE.POTION_SELECTION) {
                 statusHeader = '🤫 秘密下毒';
-                
-                statusContent = `
-                    <div class="text-center flex-grow flex flex-col justify-center">
+                contentLayout = 'flex flex-col justify-center h-full'; 
+                bodyClass = ''; 
+
+                contentBodyHtml = `
+                    <div class="text-center">
                         <div class="text-xs text-gray-400 mb-1">轮到</div>
                         <div class="text-xl sm:text-2xl font-extrabold text-yellow-300 mb-2">${players[currentPlayerIndex].name}</div>
                         
                         <div class="bg-gray-700/50 p-2 rounded-lg mb-4">
                             <p class="text-sm text-white mb-0.5">请其他玩家 <span class="text-red-400 font-bold">闭眼</span>！</p>
                             <p class="text-[10px] text-gray-300">点击卡片，弹窗确认设为毒药。</p>
+                            <p class="text-[10px] text-gray-300">(可重复选择毒药)</p>
                         </div>
 
                         <div class="flex justify-center items-center space-x-1 text-xs text-gray-500">
                             <span>进度:</span>
-                            <span class="font-mono bg-gray-700 px-1 py-0.5 rounded text-white">${Object.keys(selectedPotions).length} / ${playerCount}</span>
+                            <span class="font-mono bg-gray-700 px-1 py-0.5 rounded text-white">${currentPlayerIndex} / ${playerCount}</span>
                         </div>
                     </div>
                 `;
             } else if (gameState === GAME_STATE.REVEAL_WAIT) {
                 statusHeader = '⚠️ 挑战预备';
-                const safeCount = currentItems.length - players.length;
-                statusContent = `
-                    <div class="text-center flex-grow flex flex-col justify-center">
+                contentLayout = 'flex flex-col justify-center h-full'; 
+                bodyClass = '';
+
+                const poisonCount = Object.keys(selectedPotions).length;
+                const safeCount = currentItems.length - poisonCount;
+                contentBodyHtml = `
+                    <div class="text-center">
                         <i data-lucide="eye" class="w-8 h-8 text-green-400 mx-auto mb-1"></i>
                         <h3 class="text-lg font-bold text-white">全员睁眼！</h3>
-                        <p class="text-gray-300 text-sm mb-3">场上有 <span class="text-yellow-300 font-bold">${safeCount}</span> 个安全单词。</p>
-                        <button
-                            onclick="handleUnravelingStart()"
-                            class="w-full py-1.5 bg-green-600 text-white font-bold rounded-lg hover:bg-green-500 transition shadow-lg text-sm"
-                        >
-                            开始挑战
-                        </button>
+                        <p class="text-gray-300 text-sm mb-3">场上有 <span class="text-red-400 font-bold">${poisonCount}</span> 种毒药，<span class="text-yellow-300 font-bold">${safeCount}</span> 个安全单词。</p>
                     </div>
                 `;
+                buttonHtml = `
+                    <button
+                        onclick="handleUnravelingStart()"
+                        class="w-full py-1.5 bg-green-600 text-white font-bold rounded-lg hover:bg-green-500 transition shadow-lg text-sm flex-shrink-0"
+                    >
+                        开始挑战
+                    </button>
+                `;
             } else if (gameState === GAME_STATE.UNRAVELING) {
-                const unrevealedPoisonsCount = Object.keys(selectedPotions).filter(id => selectedPotions[id] !== 'REVEALED').length;
-                const totalPotionsRemaining = safePotions.length + unrevealedPoisonsCount;
+                // 挑战阶段：只显示操作提示 (已移除数量显示)
                 statusHeader = '🎤 单词挑战';
-                statusContent = `
-                    <div class="text-center flex-grow flex flex-col justify-center">
-                        <div class="text-xs text-gray-400 mb-0.5">轮到</div>
-                        <div class="text-xl sm:text-2xl font-extrabold text-blue-300 mb-2 animate-pulse">${players[currentUnravelerIndex].name}</div>
-                        
-                        <div class="bg-indigo-900/30 border border-indigo-500/30 p-2 rounded-lg mb-2">
-                            <p class="text-gray-200 text-xs">请大声朗读单词并点击！</p>
-                        </div>
+                contentLayout = 'flex flex-col justify-center h-full'; 
+                bodyClass = '';
 
-                        <div class="grid grid-cols-2 gap-1 text-xs text-gray-400">
-                            <div class="bg-gray-700 p-1 rounded">剩余: <span class="text-white font-bold">${totalPotionsRemaining}</span></div>
-                            <div class="bg-gray-700 p-1 rounded">毒药: <span class="text-red-400 font-bold">${unrevealedPoisonsCount}</span></div>
+                contentBodyHtml = `
+                    <div class="text-center">
+                        <div class="text-xs text-gray-400 mb-0.5">轮到</div>
+                        <div class="text-xl sm:text-2xl font-extrabold text-blue-300 mb-4 animate-pulse">${players[currentUnravelerIndex].name}</div>
+                        
+                        <div class="bg-indigo-900/30 border border-indigo-500/30 p-3 rounded-lg">
+                            <p class="text-white text-base font-bold">请大声朗读单词并点击！</p>
                         </div>
                     </div>
                 `;
             } else if (gameState === GAME_STATE.GAME_OVER) {
                 statusHeader = '🏆 游戏结束';
+                contentLayout = 'flex flex-col justify-center h-full'; 
+                bodyClass = '';
+
                 const winners = players.filter(p => p.isSafe);
                 
                 let resultHtml = winners.length > 0 ? `
@@ -689,33 +604,57 @@
                     </div>
                 `;
                     
-                statusContent = `
-                    <div class="text-center flex-grow flex flex-col justify-center">
+                contentBodyHtml = `
+                    <div class="text-center">
                         ${resultHtml}
-                        <button
-                            onclick="handleReset()"
-                            class="w-full py-1.5 bg-white text-indigo-900 font-bold rounded-lg hover:bg-gray-100 transition shadow-lg flex items-center justify-center space-x-1 text-sm mt-2"
-                        >
-                            <i data-lucide="refresh-cw" class="w-4 h-4"></i>
-                            <span>再玩一次</span>
-                        </button>
                     </div>
+                `;
+                buttonHtml = `
+                    <button
+                        onclick="handleReset()"
+                        class="w-full py-1.5 bg-white text-indigo-900 font-bold rounded-lg hover:bg-gray-100 transition shadow-lg flex items-center justify-center space-x-1 text-sm mt-2 flex-shrink-0"
+                    >
+                        <i data-lucide="refresh-cw" class="w-4 h-4"></i>
+                        <span>再玩一次</span>
+                    </button>
                 `;
             }
 
-            // 紧凑的面板结构
             container.innerHTML = `
                 <div class="bg-gray-800 top-panel-p rounded-2xl shadow-2xl border border-gray-700 h-full flex flex-col">
                     <h2 class="text-base sm:text-lg font-bold text-white flex items-center space-x-1 border-b border-gray-700 pb-1 mb-2 flex-shrink-0">
                         <span class="text-base">${statusHeader.split(' ')[0]}</span>
                         <span>${statusHeader.split(' ')[1]}</span>
                     </h2>
-                    ${statusContent}
-                    <p class="text-xs text-center text-red-400 font-medium mt-1 h-3 flex-shrink-0">${message}</p>
+                    
+                    <div class="flex-grow min-h-0 overflow-y-auto ${bodyClass}">
+                        <div class="${contentLayout}">
+                            ${contentBodyHtml}
+                        </div>
+                    </div>
+
+                    <div class="flex-shrink-0">
+                        ${buttonHtml}
+                        <p class="text-xs text-center text-red-400 font-medium mt-1 h-3">${message}</p>
+                    </div>
                 </div>
             `;
             renderIcons();
         }
+
+        function renderGrid() {
+            const container = document.getElementById('potions-grid');
+            const themeNameSpan = document.getElementById('current-theme-name');
+            
+            if (!container) return;
+            
+            themeNameSpan.textContent = ALL_THEMES[currentThemeKey].name.split(' ')[0]; 
+
+            container.innerHTML = currentItems.map(renderItemCard).join('');
+
+            renderIcons();
+        }
+
 
         // --- 核心逻辑 ---
 
@@ -725,7 +664,6 @@
             
             renderStatusPanel();
             renderPlayerStatus();
-            renderGameLog();
             renderGrid();
         }
 
@@ -758,11 +696,10 @@
 
             currentItems = selectRandomItems(currentThemeKey); 
 
-            // 确保玩家状态在开始新游戏时被重置
             players = players.map(p => ({ ...p, isDead: false, isSafe: false })); 
             gameState = GAME_STATE.POTION_SELECTION;
             currentPlayerIndex = 0;
-            currentUnravelerIndex = 0; // 重置解毒顺序
+            currentUnravelerIndex = 0; 
             selectedPotions = {}; 
             itemToConfirmId = null; 
             safePotions = [];
@@ -770,18 +707,13 @@
             setMessageText(`请 ${players[0].name} 选择一个单词作为毒药。`);
             
             renderStatusPanel();
-            renderPlayerStatus(); // 确保状态栏显示为活跃
-            renderGameLog(); 
+            renderPlayerStatus(); 
             renderGrid();
         };
 
         // *** 秘密选择：点击卡片，打开模态框确认 ***
         window.handleItemSelection = (itemId) => {
-            if (selectedPotions[itemId]) {
-                setMessageText('这个单词已经被选了，换一个吧！');
-                return;
-            }
-            
+            if (gameState !== GAME_STATE.POTION_SELECTION) return;
             showConfirmationModal(itemId);
         };
 
@@ -794,7 +726,6 @@
 
             const modalContent = document.getElementById('modal-content');
             
-            // 为了让卡片在 Modal 中也能正确显示，将卡片的样式代码简化
             let visualContent = '';
             let textClass = 'text-white';
             
@@ -838,7 +769,7 @@
             document.getElementById('confirmation-modal').classList.remove('hidden');
             document.getElementById('confirmation-modal').classList.add('flex');
             renderIcons();
-            setMessageText(''); // 隐藏主面板的错误信息
+            setMessageText(''); 
         }
 
         // *** 秘密选择：确认步骤，完成选择并切换玩家 ***
@@ -848,27 +779,30 @@
             const itemId = itemToConfirmId;
             const currentPlayer = players[currentPlayerIndex];
             
-            selectedPotions[itemId] = currentPlayer.id;
+            if (!selectedPotions[itemId] || selectedPotions[itemId] === 'REVEALED') {
+                selectedPotions[itemId] = [];
+            }
+            selectedPotions[itemId].push(currentPlayer.id);
             
-            addLog(`[秘密选择] ${currentPlayer.name} 选择了毒药 ${getItemName(itemId)}`);
+            console.log(`[选择毒药] ${currentPlayer.name} 选择了 ${getItemName(itemId)}`);
             
-            // 关闭弹窗并清空暂存
-            handleCancelSelection(); 
-
+            
             const nextPlayerIndex = currentPlayerIndex + 1;
 
             if (nextPlayerIndex < players.length) {
                 currentPlayerIndex = nextPlayerIndex;
                 setMessageText(`已记录。请闭眼，换 ${players[nextPlayerIndex].name} 操作。`);
             } else {
-                safePotions = currentItems.filter(i => !selectedPotions[i.id]).map(i => i.id);
+                safePotions = currentItems.filter(i => !isItemPoison(i.id)).map(i => i.id);
                 gameState = GAME_STATE.REVEAL_WAIT;
                 currentUnravelerIndex = 0;
                 setMessageText('所有毒药已就位！');
-                addLog(`[阶段] 毒药埋藏完毕，挑战开始。`);
+                console.log(`[阶段] 毒药埋藏完毕，挑战开始。`);
             }
             
-            renderGrid(); 
+            // 关闭弹窗并清空暂存
+            handleCancelSelection(); 
+
             renderStatusPanel();
         };
 
@@ -876,7 +810,6 @@
             itemToConfirmId = null;
             document.getElementById('confirmation-modal').classList.add('hidden');
             document.getElementById('confirmation-modal').classList.remove('flex');
-            // 恢复提示，但不清空可能存在的其他信息
             if (gameState === GAME_STATE.POTION_SELECTION) {
                  setMessageText(`请 ${players[currentPlayerIndex].name} 选择一个单词作为毒药。`);
             }
@@ -885,16 +818,16 @@
 
         window.handleUnravelingStart = () => {
             gameState = GAME_STATE.UNRAVELING;
-            players = players.map(p => ({ ...p, isDead: false, isSafe: false })); 
+            currentUnravelerIndex = players.findIndex(p => !p.isDead);
+
             setMessageText(`请 ${players[currentUnravelerIndex].name} 朗读并选择一个单词。`);
             renderStatusPanel();
             renderGrid();
             renderPlayerStatus();
-            renderGameLog();
         };
 
         function checkGameOverAndAdvance() {
-            const unrevealedPoisons = Object.keys(selectedPotions).filter(id => selectedPotions[id] !== 'REVEALED').length;
+            const unrevealedPoisonsCount = Object.keys(selectedPotions).filter(id => isItemPoison(id)).length;
             const remainingSafe = safePotions.length;
             let activePlayers = players.filter(p => !p.isDead);
 
@@ -902,33 +835,28 @@
             if (activePlayers.length === 0) {
                 gameState = GAME_STATE.GAME_OVER;
                 setMessageText('游戏结束，无人幸存。');
-                addLog('--- 全员淘汰 ---');
                 return true;
             }
 
-            // *** 核心逻辑：仅剩一人时，此人胜利 ***
+            // 2. 仅剩一人时，此人胜利
             if (activePlayers.length === 1) {
                 gameState = GAME_STATE.GAME_OVER;
                 const winner = activePlayers[0];
                 players = players.map(p => ({ ...p, isSafe: p.id === winner.id }));
                 setMessageText(`${winner.name} 获胜！`);
-                addLog(`--- ${winner.name} 最终获胜 ---`);
                 return true;
             }
-            // *** 修正结束 ***
 
             // 3. 卡池清空 (所有幸存者获胜)
-            if (remainingSafe === 0 && unrevealedPoisons === 0) {
+            if (remainingSafe === 0 && unrevealedPoisonsCount === 0) {
                 gameState = GAME_STATE.GAME_OVER;
                 players = players.map(p => ({ ...p, isSafe: !p.isDead })); 
                 setMessageText('恭喜！所有单词挑战完成！');
-                addLog('--- 完美通关 ---');
                 return true;
             }
 
             let nextIndex = currentUnravelerIndex;
             let attempts = 0;
-            // 循环找到下一个活跃的玩家
             do {
                 nextIndex = (nextIndex + 1) % players.length;
                 attempts++;
@@ -948,17 +876,21 @@
             const player = players[currentUnravelerIndex];
             const itemName = getItemName(itemId);
 
-            if (selectedPotions[itemId]) {
-                const killerId = selectedPotions[itemId];
-                const killer = players.find(p => p.id === killerId);
+            if (isItemPoison(itemId)) {
+                // 选中毒药
+                const killerIds = selectedPotions[itemId]; 
+                const killerNames = killerIds.map(id => players.find(p => p.id === id)?.name || '未知').join('、');
                 
                 players = players.map(p => p.id === player.id ? { ...p, isDead: true } : p);
-                selectedPotions[itemId] = 'REVEALED';
+                selectedPotions[itemId] = 'REVEALED'; // 标记为已揭示
                 
-                addLog(`💀 ${player.name} 选中了 ${itemName} (来自 ${killer.name} 的毒药)！淘汰！`);
-            } else {
+                console.log(`💀 ${player.name} 选中了 ${itemName} (毒药来自: ${killerNames})！淘汰！`);
+            } else if (safePotions.includes(itemId)) {
+                // 选中安全词
                 safePotions = safePotions.filter(id => id !== itemId);
-                addLog(`✨ ${player.name} 成功朗读: ${itemName}`);
+                console.log(`✨ ${player.name} 成功朗读: ${itemName}`);
+            } else {
+                 return;
             }
 
             checkGameOverAndAdvance();
@@ -966,7 +898,6 @@
             renderPlayerStatus();
             renderGrid();
             renderStatusPanel();
-            renderGameLog();
         };
 
         window.handleReset = () => {
@@ -976,17 +907,14 @@
             selectedPotions = {};
             itemToConfirmId = null;
             safePotions = [];
-            gameLog = [];
             message = '';
             
-            // 确保重置玩家状态
             players = players.map(p => ({ ...p, isDead: false, isSafe: false })); 
 
             currentItems = selectRandomItems(currentThemeKey);
             
             renderStatusPanel();
             renderPlayerStatus();
-            renderGameLog();
             renderGrid();
         };
 
