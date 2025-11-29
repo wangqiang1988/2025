@@ -9,7 +9,7 @@ from .config_env import CORPID, CORPSECRET, AGENTID, TOUSER, BASE_URL
 BASE_DIR = Path(__file__).resolve().parent
 TOKEN_FILE_PATH = BASE_DIR / 'access_token.conf'
 print(TOKEN_FILE_PATH)
-# ----------------------------------------------------
+
 
 class WeChat:
     def __init__(self):
