@@ -1,0 +1,926 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>女巫的毒药单词版</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+    <style>
+        :root {
+            font-family: 'Inter', sans-serif;
+        }
+        
+        /* ------------------ 核心修正 1：允许页面滚动 ------------------ */
+        /* 允许内容在窗口过小时向下溢出并出现垂直滚动条 */
+        html, body {
+            min-height: 100%; 
+        }
+        
+        /* ------------------ 核心修正 2：移除强制等比缩放的 font-size ------------------ */
+        body {
+            font-size: 16px; 
+        }
+        
+        /* 单词卡网格：适应容器大小，保持紧凑，并利用所有垂直空间 */
+        .potion-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
+            grid-auto-rows: 1fr; 
+            gap: 0.5rem; 
+            height: 100%; 
+            overflow: hidden; 
+        }
+
+        /* 媒体查询：在大屏幕上强制 6 列 x 3 行布局以完美容纳 18 张卡 */
+        @media (min-width: 1024px) { /* lg: breakpoint */
+            .potion-grid {
+                grid-template-columns: repeat(6, 1fr); 
+                grid-template-rows: repeat(3, 1fr);  
+            }
+        }
+        
+        .top-panel-p {
+            padding: 0.75rem; 
+        }
+        
+        .word-card {
+            transition: all 0.2s ease-in-out;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 0.25rem;
+            text-align: center;
+            height: 100%;
+        }
+        .text-black-on-white {
+             color: #1f2937;
+        }
+    </style>
+</head>
+<body class="bg-gray-900 text-white p-2 sm:p-4 flex flex-col min-h-full">
+
+    <header class="text-center mb-0.5 sm:mb-1 flex-shrink-0">
+        <h1 class="text-2xl sm:text-3xl font-extrabold text-indigo-400 tracking-wider">
+            <span class="inline-block transform -rotate-6">📚</span> 女巫的毒药单词版
+        </h1>
+    </header>
+
+    <main id="game-container" class="max-w-7xl mx-auto w-full flex-grow min-h-0 flex flex-col space-y-2 sm:space-y-3">
+        
+        <div class="top-panel-group flex-shrink-0 grid grid-cols-1 lg:grid-cols-2 gap-2 sm:gap-3" style="flex-basis: 35%;">
+            
+            <div id="status-panel-container" class="h-full">
+            </div>
+
+            <div id="player-status-container" class="h-full">
+            </div>
+        </div>
+
+        <div id="potion-selection-area" class="bg-gray-800 p-3 rounded-3xl shadow-3xl border-4 border-dashed border-indigo-600 flex-grow min-h-0 flex flex-col">
+            <h2 class="text-xl sm:text-2xl font-bold text-white mb-1 text-center flex-shrink-0">
+                <span id="current-theme-name">单词</span>池 (共 18 张)
+            </h2>
+            <div id="potions-grid" class="potion-grid">
+                </div>
+        </div>
+    </main>
+    
+    <div id="confirmation-modal" class="fixed inset-0 bg-black/70 z-50 hidden items-center justify-center p-4">
+        <div id="modal-content" class="bg-gray-800 p-6 rounded-2xl shadow-2xl max-w-sm w-full border border-gray-700">
+            </div>
+    </div>
+
+
+    <script>
+        // --- 词库配置 (Themes) ---
+        const ALL_THEMES = {
+            colors: {
+                name: "颜色 (Colors)",
+                items: [
+                    { en: 'Red', cn: '红色', hex: '#ef4444', id: 'c1' },
+                    { en: 'Blue', cn: '蓝色', hex: '#3b82f6', id: 'c2' },
+                    { en: 'Green', cn: '绿色', hex: '#22c55e', id: 'c3' },
+                    { en: 'Yellow', cn: '黄色', hex: '#eab308', id: 'c4' },
+                    { en: 'Purple', cn: '紫色', hex: '#9333ea', id: 'c5' },
+                    { en: 'Orange', cn: '橙色', hex: '#f97316', id: 'c6' },
+                    { en: 'Pink', cn: '粉色', hex: '#db2777', id: 'c7' },
+                    { en: 'Black', cn: '黑色', hex: '#1f2937', id: 'c8' },
+                    { en: 'White', cn: '白色', hex: '#f3f4f6', txt: '#000', id: 'c9' },
+                    { en: 'Gray', cn: '灰色', hex: '#6b7280', id: 'c10' },
+                    { en: 'Brown', cn: '棕色', hex: '#78350f', id: 'c11' },
+                    { en: 'Cyan', cn: '青色', hex: '#06b6d4', id: 'c12' },
+                    { en: 'Gold', cn: '金色', emoji: '🥇', id: 'c13' },
+                    { en: 'Silver', cn: '银色', emoji: '🥈', id: 'c14' },
+                    { en: 'Lime', cn: '酸橙绿', emoji: '🟢', id: 'c15' },
+                    { en: 'Violet', cn: '紫罗兰', emoji: '🟪', id: 'c16' },
+                    { en: 'Indigo', cn: '靛青', emoji: '🟦', id: 'c17' },
+                    { en: 'Teal', cn: '蓝绿', emoji: '💎', id: 'c18' },
+                    { en: 'Maroon', cn: '褐红色', emoji: '🟤', id: 'c19' },
+                    { en: 'Navy', cn: '海军蓝', emoji: '🔵', id: 'c20' }
+                ]
+            },
+            animals: {
+                name: "动物 (Animals)",
+                items: [
+                    { en: 'Lion', cn: '狮子', emoji: '🦁', id: 'a1' },
+                    { en: 'Tiger', cn: '老虎', emoji: '🐯', id: 'a2' },
+                    { en: 'Elephant', cn: '大象', emoji: '🐘', id: 'a3' },
+                    { en: 'Monkey', cn: '猴子', emoji: '🐒', id: 'a4' },
+                    { en: 'Dog', cn: '狗', emoji: '🐶', id: 'a5' },
+                    { en: 'Cat', cn: '猫', emoji: '🐱', id: 'a6' },
+                    { en: 'Rabbit', cn: '兔子', emoji: '🐰', id: 'a7' },
+                    { en: 'Bear', cn: '熊', emoji: '🐻', id: 'a8' },
+                    { en: 'Panda', cn: '熊猫', emoji: '🐼', id: 'a9' },
+                    { en: 'Fox', cn: '狐狸', emoji: '🦊', id: 'a10' },
+                    { en: 'Pig', cn: '猪', emoji: '🐷', id: 'a11' },
+                    { en: 'Cow', cn: '牛', emoji: '🐮', id: 'a12' },
+                    { en: 'Sheep', cn: '羊', emoji: '🐑', id: 'a13' },
+                    { en: 'Horse', cn: '马', emoji: '🐴', id: 'a14' },
+                    { en: 'Zebra', cn: '斑马', emoji: '🦓', id: 'a15' },
+                    { en: 'Giraffe', cn: '长颈鹿', emoji: '🦒', id: 'a16' },
+                    { en: 'Snake', cn: '蛇', emoji: '🐍', id: 'a17' },
+                    { en: 'Bird', cn: '鸟', emoji: '🐦', id: 'a18' },
+                    { en: 'Fish', cn: '鱼', emoji: '🐟', id: 'a19' },
+                    { en: 'Shark', cn: '鲨鱼', emoji: '🦈', id: 'a20' },
+                    { en: 'Frog', cn: '青蛙', emoji: '🐸', id: 'a21' },
+                    { en: 'Whale', cn: '鲸鱼', emoji: '🐳', id: 'a22' },
+                ]
+            },
+            fruits: {
+                name: "水果 (Fruits)",
+                items: [
+                    { en: 'Apple', cn: '苹果', emoji: '🍎', id: 'f1' },
+                    { en: 'Banana', cn: '香蕉', emoji: '🍌', id: 'f2' },
+                    { en: 'Grape', cn: '葡萄', emoji: '🍇', id: 'f3' },
+                    { en: 'Orange', cn: '橙子', emoji: '🍊', id: 'f4' },
+                    { en: 'Lemon', cn: '柠檬', emoji: '🍋', id: 'f5' },
+                    { en: 'Watermelon', cn: '西瓜', emoji: '🍉', id: 'f6' },
+                    { en: 'Strawberry', cn: '草莓', emoji: '🍓', id: 'f7' },
+                    { en: 'Peach', cn: '桃子', emoji: '🍑', id: 'f8' },
+                    { en: 'Cherry', cn: '樱桃', emoji: '🍒', id: 'f9' },
+                    { en: 'Pear', cn: '梨', emoji: '🍐', id: 'f10' },
+                    { en: 'Pineapple', cn: '菠萝', emoji: '🍍', id: 'f11' },
+                    { en: 'Coconut', cn: '椰子', emoji: '🥥', id: 'f12' },
+                    { en: 'Mango', cn: '芒果', emoji: '🥭', id: 'f13' },
+                    { en: 'Kiwi', cn: '猕猴桃', emoji: '🥝', id: 'f14' },
+                    { en: 'Avocado', cn: '牛油果', emoji: '🥑', id: 'f15' },
+                    { en: 'Melon', cn: '甜瓜', emoji: '🍈', id: 'f16' },
+                    { en: 'Tomato', cn: '西红柿', emoji: '🍅', id: 'f17' },
+                    { en: 'Blueberry', cn: '蓝莓', emoji: '🫐', id: 'f18' },
+                    { en: 'Raspberry', cn: '树莓', emoji: '🍇', id: 'f19' },
+                    { en: 'Lime', cn: '青柠', emoji: '🟢', id: 'f20' },
+                    { en: 'Fig', cn: '无花果', emoji: '🟣', id: 'f21' },
+                    { en: 'Plum', cn: '李子', emoji: '🫐', id: 'f22' }
+                ]
+            },
+            school: {
+                name: "学习用具 (School Supplies)",
+                items: [
+                    { en: 'Pen', cn: '钢笔', emoji: '🖊️', id: 's1' },
+                    { en: 'Pencil', cn: '铅笔', emoji: '✏️', id: 's2' },
+                    { en: 'Eraser', cn: '橡皮', emoji: '⬜', id: 's3' },
+                    { en: 'Notebook', cn: '笔记本', emoji: '📓', id: 's4' },
+                    { en: 'Book', cn: '书', emoji: '📖', id: 's5' },
+                    { en: 'Ruler', cn: '尺子', emoji: '📏', id: 's6' },
+                    { en: 'Backpack', cn: '背包', emoji: '🎒', id: 's7' },
+                    { en: 'Scissors', cn: '剪刀', emoji: '✂️', id: 's8' },
+                    { en: 'Glue', cn: '胶水', emoji: '💧', id: 's9' },
+                    { en: 'Globe', cn: '地球仪', emoji: '🌍', id: 's10' },
+                    { en: 'Calculator', cn: '计算器', emoji: '🧮', id: 's11' },
+                    { en: 'Map', cn: '地图', emoji: '🗺️', id: 's12' },
+                    { en: 'Desk', cn: '书桌', emoji: '🖥️', id: 's13' },
+                    { en: 'Chair', cn: '椅子', emoji: '🪑', id: 's14' },
+                    { en: 'Crayon', cn: '蜡笔', emoji: '🖍️', id: 's15' },
+                    { en: 'Highlighter', cn: '荧光笔', emoji: '🧪', id: 's16' },
+                    { en: 'Locker', cn: '储物柜', emoji: '🔒', id: 's17' },
+                    { en: 'Whiteboard', cn: '白板', emoji: '📝', id: 's18' },
+                    { en: 'Folder', cn: '文件夹', emoji: '📂', id: 's19' },
+                    { en: 'Dictionary', cn: '词典', emoji: '📙', id: 's20' },
+                ]
+            },
+            home: {
+                name: "生活用品 (Household Items)",
+                items: [
+                    { en: 'Sofa', cn: '沙发', emoji: '🛋️', id: 'h1' },
+                    { en: 'Lamp', cn: '台灯', emoji: '💡', id: 'h2' },
+                    { en: 'Clock', cn: '时钟', emoji: '⏰', id: 'h3' },
+                    { en: 'Spoon', cn: '勺子', emoji: '🥄', id: 'h4' },
+                    { en: 'Plate', cn: '盘子', emoji: '🍽️', id: 'h5' },
+                    { en: 'Towel', cn: '毛巾', emoji: '🧖', id: 'h6' },
+                    { en: 'Soap', cn: '肥皂', emoji: '🧼', id: 'h7' },
+                    { en: 'Key', cn: '钥匙', emoji: '🔑', id: 'h8' },
+                    { en: 'Mirror', cn: '镜子', emoji: '🪞', id: 'h9' },
+                    { en: 'Pillow', cn: '枕头', emoji: '🛏️', id: 'h10' },
+                    { en: 'Blanket', cn: '毯子', emoji: '🛌', id: 'h11' },
+                    { en: 'Toothbrush', cn: '牙刷', emoji: '🦷', id: 'h12' },
+                    { en: 'TV', cn: '电视', emoji: '📺', id: 'h13' },
+                    { en: 'Phone', cn: '电话', emoji: '📞', id: 'h14' },
+                    { en: 'Vase', cn: '花瓶', emoji: '🏺', id: 'h15' },
+                    { en: 'Basket', cn: '篮子', emoji: '🧺', id: 'h16' },
+                    { en: 'Cabinet', cn: '柜子', emoji: '🗄️', id: 'h17' },
+                    { en: 'Hanger', cn: '衣架', emoji: '👚', id: 'h18' },
+                    { en: 'Mop', cn: '拖把', emoji: '🧹', id: 'h19' },
+                    { en: 'Fan', cn: '风扇', emoji: '💨', id: 'h20' },
+                ]
+            }
+        };
+
+        // *** 混合主题的计算逻辑 ***
+        (() => {
+            let allMixedItems = [];
+            const combinableKeys = ['colors', 'animals', 'fruits', 'school', 'home']; 
+
+            combinableKeys.forEach(key => {
+                if (ALL_THEMES[key] && ALL_THEMES[key].items) {
+                    allMixedItems = allMixedItems.concat(ALL_THEMES[key].items);
+                }
+            });
+
+            ALL_THEMES.mixed = {
+                name: "混合主题 (All Mixed)",
+                items: allMixedItems
+            };
+        })();
+        // ********************************
+
+        const MAX_PLAYERS = 4;
+        const CARD_POOL_SIZE = 18; 
+
+        const GAME_STATE = {
+            SETUP: 'SETUP',
+            POTION_SELECTION: 'POTION_SELECTION',
+            REVEAL_WAIT: 'REVEAL_WAIT',
+            UNRAVELING: 'UNRAVELING',
+            GAME_OVER: 'GAME_OVER',
+        };
+
+        // --- 全局状态 ---
+        let gameState = GAME_STATE.SETUP;
+        let playerCount = 2; 
+        let currentThemeKey = 'animals'; 
+        let currentItems = []; 
+        let players = [];
+        let currentPlayerIndex = 0;
+        let currentUnravelerIndex = 0;
+        // selectedPotions 存储 { itemId: [playerId1, playerId2, ...], id2: 'REVEALED', ... }
+        let selectedPotions = {}; 
+        let itemToConfirmId = null; 
+        let safePotions = []; 
+        let message = '';
+        
+
+        // --- 辅助函数 ---
+        
+        function shuffle(array) {
+            let currentIndex = array.length, randomIndex;
+            while (currentIndex !== 0) {
+                randomIndex = Math.floor(Math.random() * currentIndex);
+                currentIndex--;
+                [array[currentIndex], array[randomIndex]] = [array[randomIndex], array[currentIndex]];
+            }
+            return array;
+        }
+
+        function selectRandomItems(themeKey, count = CARD_POOL_SIZE) {
+            const allItems = ALL_THEMES[themeKey].items;
+            const shuffled = shuffle([...allItems]);
+            return shuffled.slice(0, Math.min(count, allItems.length));
+        }
+
+        const generateDefaultPlayers = (count) => {
+            return Array.from({ length: count }, (_, i) => ({
+                id: i + 1,
+                name: `玩家 ${i + 1}`,
+                isDead: false,
+                isSafe: false,
+            }));
+        };
+
+        const getItemName = (id) => {
+            const item = currentItems.find(i => i.id === id);
+            return item ? `${item.en} (${item.cn})` : '未知';
+        };
+
+        const setMessageText = (text) => {
+            message = text;
+            renderStatusPanel();
+        };
+
+        function isItemPoison(itemId) {
+            const status = selectedPotions[itemId];
+            // 毒药：是数组（存储了玩家ID）
+            return status && Array.isArray(status) && status.length > 0;
+        }
+
+        // --- 渲染函数 ---
+
+        function renderIcons() {
+            if (window.lucide && window.lucide.createIcons) {
+                setTimeout(() => window.lucide.createIcons(), 0);
+            }
+        }
+
+        function renderItemCard(item) {
+            const isPoison = isItemPoison(item.id); 
+            const isRevealedPoison = selectedPotions[item.id] === 'REVEALED';
+            
+            let baseClass = 'word-card rounded-xl shadow-lg cursor-pointer transform hover:scale-[1.02] active:scale-[0.98] transition duration-150';
+            let contentClass = 'bg-gray-700/80 text-white border-2 border-gray-600/50';
+            let textClass = 'text-white';
+            let visualContent = '';
+            let dataAction = ''; 
+            
+            // 确定状态和点击行为
+            if (gameState === GAME_STATE.SETUP) {
+                baseClass = 'word-card rounded-xl shadow-lg cursor-default opacity-80';
+                dataAction = '';
+            } else if (gameState === GAME_STATE.POTION_SELECTION) {
+                // 秘密下毒阶段：始终保持卡片外观一致，且可点击 (无黄框)
+                dataAction = `onclick="handleItemSelection('${item.id}')"`;
+                baseClass += ' hover:bg-yellow-800/20'; 
+                
+            } else if (gameState === GAME_STATE.REVEAL_WAIT) {
+                // 揭示等待阶段：不可点击
+                baseClass = 'word-card rounded-xl shadow-lg cursor-default opacity-90';
+                dataAction = '';
+
+            } else if (gameState === GAME_STATE.UNRAVELING) {
+                // 挑战解毒阶段
+                
+                if (isRevealedPoison) {
+                    // 已揭示的毒药：不可点击，显示死亡色
+                    contentClass = 'bg-red-900 border-4 border-red-500 animate-pulse';
+                    dataAction = 'onclick=""'; 
+                    baseClass = 'word-card rounded-xl shadow-lg cursor-default';
+                } else if (!isPoison && !safePotions.includes(item.id)) {
+                    // 已经被朗读的安全词：不可点击，显示绿色边框（已朗读的安全词）
+                    contentClass = 'bg-green-900/50 border-4 border-green-500 opacity-60';
+                    dataAction = 'onclick=""'; 
+                    baseClass = 'word-card rounded-xl shadow-lg cursor-default';
+                } else {
+                    // 待朗读的词汇（毒药或安全词）：可点击
+                    dataAction = `onclick="handleUnravelingChoice('${item.id}')"`;
+                    baseClass += ' hover:scale-[1.05] active:scale-[0.95]';
+                    
+                    // *** 核心修正：无论是毒药还是安全词，待选时的外观保持一致 ***
+                    contentClass = 'bg-gray-700 border-2 border-indigo-400';
+                    baseClass += ' hover:bg-indigo-600/30';
+                }
+            } else if (gameState === GAME_STATE.GAME_OVER) {
+                // 游戏结束状态：不可点击
+                dataAction = 'onclick=""';
+                baseClass = 'word-card rounded-xl shadow-lg cursor-default';
+                if (isRevealedPoison) {
+                    contentClass = 'bg-red-900 border-4 border-red-500';
+                } else if (isPoison) { // 未被揭示的毒药
+                    contentClass = 'bg-red-800/80 border-4 border-red-400';
+                } else {
+                    contentClass = 'bg-gray-700/80 border-2 border-gray-600/50 opacity-80';
+                }
+            }
+
+            // 确定卡片内容
+            if (item.hex) { 
+                visualContent = `<div class="w-8 h-8 rounded-full shadow-md mb-1 border-2 border-white/20" style="background-color: ${item.hex}"></div>`;
+                if (item.hex === '#f3f4f6') { 
+                    textClass = 'text-black-on-white';
+                }
+            } else if (item.emoji) {
+                visualContent = `<div class="text-3xl">${item.emoji}</div>`;
+            }
+
+            const itemContent = `
+                ${visualContent}
+                <div class="text-xs sm:text-sm font-bold ${textClass} tracking-wide leading-tight">${item.en}</div>
+                <div class="text-[10px] sm:text-xs text-gray-400 font-medium mt-0.5">${item.cn}</div>
+            `;
+
+            return `
+                <div class="h-full">
+                    <div class="${baseClass}" ${dataAction}>
+                        <div class="h-full w-full flex flex-col items-center justify-center p-1 rounded-lg ${contentClass} text-center">
+                            ${itemContent}
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderPlayerStatus() {
+            const container = document.getElementById('player-status-container');
+            
+            const playersHtml = players.map(p => {
+                const isCurrent = gameState === GAME_STATE.UNRAVELING && !p.isDead && p.id === players[currentUnravelerIndex].id;
+                
+                let statusClass = 'bg-gray-700 border border-gray-600';
+                let statusText = `<span class="text-yellow-400 font-bold text-[10px] sm:text-xs">活跃</span>`;
+                let icon = '<i data-lucide="smile" class="w-3 h-3 sm:w-4 sm:h-4 text-gray-400"></i>';
+
+                if (p.isDead) {
+                    statusClass = 'bg-red-900 border-2 border-red-500 opacity-60';
+                    statusText = `<span class="text-red-400 font-bold flex items-center text-[10px] sm:text-xs"><i data-lucide="skull" class="w-2 h-2 mr-0.5"></i> 淘汰</span>`;
+                    icon = '<i data-lucide="ghost" class="w-3 h-3 sm:w-4 sm:h-4 text-red-400"></i>';
+                } else if (p.isSafe) { 
+                    statusClass = 'bg-green-900 border-2 border-green-500';
+                    statusText = `<span class="text-green-400 font-bold flex items-center text-[10px] sm:text-xs"><i data-lucide="trophy" class="w-2 h-2 mr-0.5"></i> 获胜</span>`;
+                    icon = '<i data-lucide="crown" class="w-3 h-3 sm:w-4 sm:h-4 text-yellow-400"></i>';
+                } else if (isCurrent) {
+                    statusClass = 'bg-indigo-700 border-2 border-indigo-400 ring-2 ring-2 ring-indigo-300 animate-pulse';
+                    statusText = `<span class="text-indigo-200 font-bold flex items-center text-[10px] sm:text-xs">轮到你了</span>`;
+                }
+
+                return `
+                    <div class="p-1.5 sm:p-2 rounded-lg shadow-inner flex items-center space-x-1 sm:space-x-2 transition duration-300 ${statusClass}">
+                        <div class="flex-shrink-0">${icon}</div>
+                        <div class="flex-grow min-w-0">
+                            <p class="font-semibold text-xs sm:text-sm text-white truncate">${p.name}</p>
+                            ${statusText}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            const contentHtml = players.length > 0 ? playersHtml : '<p class="text-gray-500 text-center py-4">请在左侧面板设置玩家。</p>';
+
+            container.innerHTML = `
+                <div class="bg-gray-800 top-panel-p rounded-2xl shadow-xl border border-gray-700 h-full flex flex-col">
+                    <h3 class="text-base sm:text-lg font-bold text-white mb-1 flex items-center space-x-1 flex-shrink-0 border-b border-gray-700 pb-1">
+                        <i data-lucide="users" class="w-4 h-4 text-teal-400"></i>
+                        <span>玩家状态</span>
+                    </h3>
+                    <div class="grid grid-cols-2 gap-2 flex-grow min-h-0 overflow-y-auto p-0.5">
+                        ${contentHtml}
+                    </div>
+                </div>
+            `;
+            renderIcons();
+        }
+
+        function renderStatusPanel() {
+            const container = document.getElementById('status-panel-container');
+            let statusHeader = '';
+            let contentBodyHtml = ''; 
+            let buttonHtml = ''; 
+            let bodyClass = 'p-0.5'; 
+            let contentLayout = ''; 
+
+            if (gameState === GAME_STATE.SETUP) {
+                statusHeader = '⚙️ 游戏设置';
+                contentLayout = 'space-y-2'; 
+                
+                const themeOptions = Object.keys(ALL_THEMES).map(key => 
+                    `<option value="${key}" ${currentThemeKey === key ? 'selected' : ''}>${ALL_THEMES[key].name}</option>`
+                ).join('');
+
+                const playerInputs = players.map(p => `
+                    <div class="flex items-center space-x-1">
+                        <span class="text-gray-400 w-12 text-xs">P ${p.id}</span>
+                        <input
+                            type="text"
+                            value="${p.name}"
+                            onchange="handlePlayerNameChange(${p.id}, this.value)"
+                            class="flex-grow p-1 border border-gray-600 rounded-md bg-gray-700 text-white text-xs focus:border-indigo-500 outline-none"
+                            placeholder="昵称"
+                        />
+                    </div>
+                `).join('');
+
+                contentBodyHtml = `
+                    <div class="space-y-1">
+                        <label class="block text-xs font-medium text-gray-400">主题/人数</label>
+                        <div class="flex space-x-2">
+                            <select 
+                                onchange="handleThemeChange(this.value)"
+                                class="flex-grow p-1 border border-gray-600 rounded-md bg-gray-700 text-white text-xs focus:border-indigo-500 outline-none"
+                            >
+                                ${themeOptions}
+                            </select>
+                            <select
+                                value="${playerCount}"
+                                onchange="handlePlayerCountChange(Number(this.value))"
+                                class="w-16 p-1 border border-gray-600 rounded-md bg-gray-700 text-white text-xs focus:border-indigo-500 outline-none"
+                            >
+                                ${[2, 3, 4].map(num => `<option value="${num}" ${playerCount === num ? 'selected' : ''}>${num} 人</option>`).join('')}
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="bg-gray-700/50 p-2 rounded-lg border border-gray-700">
+                        <h3 class="text-xs font-bold text-gray-300 mb-1">玩家昵称</h3>
+                        <div class="grid grid-cols-2 gap-1">
+                            ${playerInputs}
+                        </div>
+                    </div>
+                `;
+                
+                buttonHtml = `
+                    <button
+                        onclick="startGame()"
+                        class="w-full py-1.5 bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-bold rounded-lg hover:from-indigo-500 hover:to-purple-500 transition shadow-lg transform active:scale-95 flex items-center justify-center space-x-1 text-sm flex-shrink-0"
+                    >
+                        <span>开始游戏</span>
+                        <i data-lucide="play" class="w-4 h-4"></i>
+                    </button>
+                `;
+            } else if (gameState === GAME_STATE.POTION_SELECTION) {
+                statusHeader = '🤫 秘密下毒';
+                contentLayout = 'flex flex-col justify-center h-full'; 
+                bodyClass = ''; 
+
+                contentBodyHtml = `
+                    <div class="text-center">
+                        <div class="text-xs text-gray-400 mb-1">轮到</div>
+                        <div class="text-xl sm:text-2xl font-extrabold text-yellow-300 mb-2">${players[currentPlayerIndex].name}</div>
+                        
+                        <div class="bg-gray-700/50 p-2 rounded-lg mb-4">
+                            <p class="text-sm text-white mb-0.5">请其他玩家 <span class="text-red-400 font-bold">闭眼</span>！</p>
+                            <p class="text-[10px] text-gray-300">点击卡片，弹窗确认设为毒药。</p>
+                            <p class="text-[10px] text-gray-300">(可重复选择毒药)</p>
+                        </div>
+
+                        <div class="flex justify-center items-center space-x-1 text-xs text-gray-500">
+                            <span>进度:</span>
+                            <span class="font-mono bg-gray-700 px-1 py-0.5 rounded text-white">${currentPlayerIndex} / ${playerCount}</span>
+                        </div>
+                    </div>
+                `;
+            } else if (gameState === GAME_STATE.REVEAL_WAIT) {
+                statusHeader = '⚠️ 挑战预备';
+                contentLayout = 'flex flex-col justify-center h-full'; 
+                bodyClass = '';
+
+                const poisonCount = Object.keys(selectedPotions).length;
+                const safeCount = currentItems.length - poisonCount;
+                contentBodyHtml = `
+                    <div class="text-center">
+                        <i data-lucide="eye" class="w-8 h-8 text-green-400 mx-auto mb-1"></i>
+                        <h3 class="text-lg font-bold text-white">全员睁眼！</h3>
+                        <p class="text-gray-300 text-sm mb-3">场上有 <span class="text-red-400 font-bold">${poisonCount}</span> 种毒药，<span class="text-yellow-300 font-bold">${safeCount}</span> 个安全单词。</p>
+                    </div>
+                `;
+                buttonHtml = `
+                    <button
+                        onclick="handleUnravelingStart()"
+                        class="w-full py-1.5 bg-green-600 text-white font-bold rounded-lg hover:bg-green-500 transition shadow-lg text-sm flex-shrink-0"
+                    >
+                        开始挑战
+                    </button>
+                `;
+            } else if (gameState === GAME_STATE.UNRAVELING) {
+                // 挑战阶段：只显示操作提示 (已移除数量显示)
+                statusHeader = '🎤 单词挑战';
+                contentLayout = 'flex flex-col justify-center h-full'; 
+                bodyClass = '';
+
+                contentBodyHtml = `
+                    <div class="text-center">
+                        <div class="text-xs text-gray-400 mb-0.5">轮到</div>
+                        <div class="text-xl sm:text-2xl font-extrabold text-blue-300 mb-4 animate-pulse">${players[currentUnravelerIndex].name}</div>
+                        
+                        <div class="bg-indigo-900/30 border border-indigo-500/30 p-3 rounded-lg">
+                            <p class="text-white text-base font-bold">请大声朗读单词并点击！</p>
+                        </div>
+                    </div>
+                `;
+            } else if (gameState === GAME_STATE.GAME_OVER) {
+                statusHeader = '🏆 游戏结束';
+                contentLayout = 'flex flex-col justify-center h-full'; 
+                bodyClass = '';
+
+                const winners = players.filter(p => p.isSafe);
+                
+                let resultHtml = winners.length > 0 ? `
+                    <div class="mb-2">
+                        <div class="text-4xl mb-1">🎉</div>
+                        <div class="text-lg font-bold text-green-400">获胜者</div>
+                        <div class="text-xl text-white font-extrabold">${winners.map(p => p.name).join(' & ')}</div>
+                    </div>
+                ` : `
+                    <div class="mb-2">
+                        <div class="text-4xl mb-1">💀</div>
+                        <div class="text-lg font-bold text-red-400">全员淘汰</div>
+                    </div>
+                `;
+                    
+                contentBodyHtml = `
+                    <div class="text-center">
+                        ${resultHtml}
+                    </div>
+                `;
+                buttonHtml = `
+                    <button
+                        onclick="handleReset()"
+                        class="w-full py-1.5 bg-white text-indigo-900 font-bold rounded-lg hover:bg-gray-100 transition shadow-lg flex items-center justify-center space-x-1 text-sm mt-2 flex-shrink-0"
+                    >
+                        <i data-lucide="refresh-cw" class="w-4 h-4"></i>
+                        <span>再玩一次</span>
+                    </button>
+                `;
+            }
+
+            container.innerHTML = `
+                <div class="bg-gray-800 top-panel-p rounded-2xl shadow-2xl border border-gray-700 h-full flex flex-col">
+                    <h2 class="text-base sm:text-lg font-bold text-white flex items-center space-x-1 border-b border-gray-700 pb-1 mb-2 flex-shrink-0">
+                        <span class="text-base">${statusHeader.split(' ')[0]}</span>
+                        <span>${statusHeader.split(' ')[1]}</span>
+                    </h2>
+                    
+                    <div class="flex-grow min-h-0 overflow-y-auto ${bodyClass}">
+                        <div class="${contentLayout}">
+                            ${contentBodyHtml}
+                        </div>
+                    </div>
+
+                    <div class="flex-shrink-0">
+                        ${buttonHtml}
+                        <p class="text-xs text-center text-red-400 font-medium mt-1 h-3">${message}</p>
+                    </div>
+                </div>
+            `;
+            renderIcons();
+        }
+
+        function renderGrid() {
+            const container = document.getElementById('potions-grid');
+            const themeNameSpan = document.getElementById('current-theme-name');
+            
+            if (!container) return;
+            
+            themeNameSpan.textContent = ALL_THEMES[currentThemeKey].name.split(' ')[0]; 
+
+            container.innerHTML = currentItems.map(renderItemCard).join('');
+
+            renderIcons();
+        }
+
+
+        // --- 核心逻辑 ---
+
+        function initializeGame() {
+            players = generateDefaultPlayers(playerCount);
+            currentItems = selectRandomItems(currentThemeKey); 
+            
+            renderStatusPanel();
+            renderPlayerStatus();
+            renderGrid();
+        }
+
+        window.handleThemeChange = (key) => {
+            currentThemeKey = key;
+            currentItems = selectRandomItems(currentThemeKey);
+            renderGrid();
+        };
+
+        window.handlePlayerCountChange = (count) => {
+            playerCount = count;
+            players = generateDefaultPlayers(count);
+            renderStatusPanel();
+            renderPlayerStatus();
+        };
+
+        window.handlePlayerNameChange = (id, newName) => {
+            players = players.map(p => p.id === id ? { ...p, name: newName } : p);
+        };
+
+        window.startGame = () => {
+            if (players.some(p => !p.name.trim())) {
+                 setMessageText('请填写所有玩家的昵称！');
+                 return;
+            }
+            if (playerCount > CARD_POOL_SIZE) {
+                setMessageText(`玩家人数 (${playerCount}) 不能超过卡片总数 (${CARD_POOL_SIZE})！`);
+                return;
+            }
+
+            currentItems = selectRandomItems(currentThemeKey); 
+
+            players = players.map(p => ({ ...p, isDead: false, isSafe: false })); 
+            gameState = GAME_STATE.POTION_SELECTION;
+            currentPlayerIndex = 0;
+            currentUnravelerIndex = 0; 
+            selectedPotions = {}; 
+            itemToConfirmId = null; 
+            safePotions = [];
+
+            setMessageText(`请 ${players[0].name} 选择一个单词作为毒药。`);
+            
+            renderStatusPanel();
+            renderPlayerStatus(); 
+            renderGrid();
+        };
+
+        // *** 秘密选择：点击卡片，打开模态框确认 ***
+        window.handleItemSelection = (itemId) => {
+            if (gameState !== GAME_STATE.POTION_SELECTION) return;
+            showConfirmationModal(itemId);
+        };
+
+        function showConfirmationModal(itemId) {
+            const item = currentItems.find(i => i.id === itemId);
+            if (!item) return;
+
+            itemToConfirmId = itemId;
+            const currentName = players[currentPlayerIndex].name;
+
+            const modalContent = document.getElementById('modal-content');
+            
+            let visualContent = '';
+            let textClass = 'text-white';
+            
+            if (item.hex) { 
+                visualContent = `<div class="w-8 h-8 rounded-full shadow-md mb-2 border-2 border-white/20 mx-auto" style="background-color: ${item.hex}"></div>`;
+                if (item.hex === '#f3f4f6') { 
+                    textClass = 'text-black-on-white';
+                }
+            } else if (item.emoji) {
+                visualContent = `<div class="text-4xl mb-2">${item.emoji}</div>`;
+            }
+
+            modalContent.innerHTML = `
+                <h3 class="text-xl font-bold text-yellow-300 mb-2 text-center">🤫 确认下毒</h3>
+                <p class="text-sm text-gray-300 mb-4 text-center">玩家 <span class="font-bold text-white">${currentName}</span> 确定选择以下单词作为毒药吗？</p>
+                
+                <div class="bg-gray-700 border-2 border-yellow-500 rounded-xl p-4 mb-4 flex flex-col items-center justify-center shadow-lg">
+                    ${visualContent}
+                    <div class="text-lg sm:text-xl font-bold ${textClass} tracking-wide text-center leading-tight">${item.en}</div>
+                    <div class="text-sm text-gray-400 mt-1 font-medium">${item.cn}</div>
+                </div>
+
+                <div class="flex space-x-3">
+                    <button
+                        onclick="handleCancelSelection()"
+                        class="flex-grow py-2 bg-gray-600 text-white font-bold rounded-lg hover:bg-gray-500 transition shadow-md text-sm"
+                    >
+                        <i data-lucide="x" class="w-4 h-4 mr-1 inline-block"></i>
+                        取消
+                    </button>
+                    <button
+                        onclick="handleConfirmSelection()"
+                        class="flex-grow py-2 bg-red-600 text-white font-bold rounded-lg hover:bg-red-500 transition shadow-md text-sm"
+                    >
+                        <i data-lucide="skull" class="w-4 h-4 mr-1 inline-block"></i>
+                        确认为毒药
+                    </button>
+                </div>
+            `;
+
+            document.getElementById('confirmation-modal').classList.remove('hidden');
+            document.getElementById('confirmation-modal').classList.add('flex');
+            renderIcons();
+            setMessageText(''); 
+        }
+
+        // *** 秘密选择：确认步骤，完成选择并切换玩家 ***
+        window.handleConfirmSelection = () => {
+            if (!itemToConfirmId) return;
+
+            const itemId = itemToConfirmId;
+            const currentPlayer = players[currentPlayerIndex];
+            
+            if (!selectedPotions[itemId] || selectedPotions[itemId] === 'REVEALED') {
+                selectedPotions[itemId] = [];
+            }
+            selectedPotions[itemId].push(currentPlayer.id);
+            
+            console.log(`[选择毒药] ${currentPlayer.name} 选择了 ${getItemName(itemId)}`);
+            
+            
+            const nextPlayerIndex = currentPlayerIndex + 1;
+
+            if (nextPlayerIndex < players.length) {
+                currentPlayerIndex = nextPlayerIndex;
+                setMessageText(`已记录。请闭眼，换 ${players[nextPlayerIndex].name} 操作。`);
+            } else {
+                safePotions = currentItems.filter(i => !isItemPoison(i.id)).map(i => i.id);
+                gameState = GAME_STATE.REVEAL_WAIT;
+                currentUnravelerIndex = 0;
+                setMessageText('所有毒药已就位！');
+                console.log(`[阶段] 毒药埋藏完毕，挑战开始。`);
+            }
+            
+            // 关闭弹窗并清空暂存
+            handleCancelSelection(); 
+
+            renderStatusPanel();
+        };
+
+        window.handleCancelSelection = () => {
+            itemToConfirmId = null;
+            document.getElementById('confirmation-modal').classList.add('hidden');
+            document.getElementById('confirmation-modal').classList.remove('flex');
+            if (gameState === GAME_STATE.POTION_SELECTION) {
+                 setMessageText(`请 ${players[currentPlayerIndex].name} 选择一个单词作为毒药。`);
+            }
+            renderGrid();
+        };
+
+        window.handleUnravelingStart = () => {
+            gameState = GAME_STATE.UNRAVELING;
+            currentUnravelerIndex = players.findIndex(p => !p.isDead);
+
+            setMessageText(`请 ${players[currentUnravelerIndex].name} 朗读并选择一个单词。`);
+            renderStatusPanel();
+            renderGrid();
+            renderPlayerStatus();
+        };
+
+        function checkGameOverAndAdvance() {
+            const unrevealedPoisonsCount = Object.keys(selectedPotions).filter(id => isItemPoison(id)).length;
+            const remainingSafe = safePotions.length;
+            let activePlayers = players.filter(p => !p.isDead);
+
+            // 1. 全员淘汰
+            if (activePlayers.length === 0) {
+                gameState = GAME_STATE.GAME_OVER;
+                setMessageText('游戏结束，无人幸存。');
+                return true;
+            }
+
+            // 2. 仅剩一人时，此人胜利
+            if (activePlayers.length === 1) {
+                gameState = GAME_STATE.GAME_OVER;
+                const winner = activePlayers[0];
+                players = players.map(p => ({ ...p, isSafe: p.id === winner.id }));
+                setMessageText(`${winner.name} 获胜！`);
+                return true;
+            }
+
+            // 3. 卡池清空 (所有幸存者获胜)
+            if (remainingSafe === 0 && unrevealedPoisonsCount === 0) {
+                gameState = GAME_STATE.GAME_OVER;
+                players = players.map(p => ({ ...p, isSafe: !p.isDead })); 
+                setMessageText('恭喜！所有单词挑战完成！');
+                return true;
+            }
+
+            let nextIndex = currentUnravelerIndex;
+            let attempts = 0;
+            do {
+                nextIndex = (nextIndex + 1) % players.length;
+                attempts++;
+            } while (players[nextIndex].isDead && attempts <= players.length);
+
+            if (attempts <= players.length) {
+                currentUnravelerIndex = nextIndex;
+                setMessageText(`轮到 ${players[currentUnravelerIndex].name}。`);
+                return false;
+            }
+            return true; 
+        }
+
+        window.handleUnravelingChoice = (itemId) => {
+            if (gameState !== GAME_STATE.UNRAVELING) return;
+
+            const player = players[currentUnravelerIndex];
+            const itemName = getItemName(itemId);
+
+            if (isItemPoison(itemId)) {
+                // 选中毒药
+                const killerIds = selectedPotions[itemId]; 
+                const killerNames = killerIds.map(id => players.find(p => p.id === id)?.name || '未知').join('、');
+                
+                players = players.map(p => p.id === player.id ? { ...p, isDead: true } : p);
+                selectedPotions[itemId] = 'REVEALED'; // 标记为已揭示
+                
+                console.log(`💀 ${player.name} 选中了 ${itemName} (毒药来自: ${killerNames})！淘汰！`);
+            } else if (safePotions.includes(itemId)) {
+                // 选中安全词
+                safePotions = safePotions.filter(id => id !== itemId);
+                console.log(`✨ ${player.name} 成功朗读: ${itemName}`);
+            } else {
+                 return;
+            }
+
+            checkGameOverAndAdvance();
+            
+            renderPlayerStatus();
+            renderGrid();
+            renderStatusPanel();
+        };
+
+        window.handleReset = () => {
+            gameState = GAME_STATE.SETUP;
+            currentPlayerIndex = 0;
+            currentUnravelerIndex = 0;
+            selectedPotions = {};
+            itemToConfirmId = null;
+            safePotions = [];
+            message = '';
+            
+            players = players.map(p => ({ ...p, isDead: false, isSafe: false })); 
+
+            currentItems = selectRandomItems(currentThemeKey);
+            
+            renderStatusPanel();
+            renderPlayerStatus();
+            renderGrid();
+        };
+
+        // 启动
+        document.addEventListener('DOMContentLoaded', initializeGame);
+
+    </script>
+</body>
+</html>
