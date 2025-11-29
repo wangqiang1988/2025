@@ -15,7 +15,6 @@ class WeChat:
     def __init__(self):
         # ⚠️ 凭证请务必再次核对，如果仍出现40001错误，请检查这两个值
         self.CORPID = CORPID
-        # 假设 Secret 是 'rFXxWdOahQMKZcMjSkiAfQ35a30rxZDaCiBW5pUqf0' (注意 w/W 的大小写)
         self.CORPSECRET = CORPSECRET
         
         # 🚨 修复：移除 AgentID 前后的空格
