@@ -1,0 +1,3 @@
+config_env.*
+strava/utils/access_token.conf
+strava/utils/config_secrets.py
