@@ -47,11 +47,20 @@ def cleanup_files():
 
 # --- 辅助函数：确定语言 ---
 def get_locale():
-    """根据请求头确定用户偏好的语言"""
-    # 简单的逻辑：检查 Accept-Language 头是否包含 'zh'
+    """根据URL参数或请求头确定用户偏好的语言"""
+    
+    # 1. 检查 URL 查询参数 (优先响应用户的点击切换)
+    # 如果用户点击了导航栏的 '中文' 或 'EN' 链接，这里会捕获 ?lang=zh 或 ?lang=en
+    lang_param = request.args.get('lang')
+    if lang_param in ['zh', 'en']:
+        return lang_param
+    
+    # 2. 检查 Accept-Language 请求头 (默认行为)
     accept_language = request.headers.get('Accept-Language', '')
     if 'zh' in accept_language.lower():
         return 'zh'
+    
+    # 3. 默认返回英文
     return 'en'
 
 
