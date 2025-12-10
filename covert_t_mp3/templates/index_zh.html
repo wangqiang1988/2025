@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>视频极速转 MP3 - 免费，全球可用</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        .hero { background-color: #f8f9fa; padding: 60px 0; }
+        .feature-icon { font-size: 2rem; color: #007bff; }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-light bg-light">
+        <div class="container">
+            <a class="navbar-brand" href="#">🎬 转换中心</a>
+            <span class="navbar-text">中文 | <a href="?lang=en">EN</a></span>
+        </div>
+    </nav>
+
+    <header class="hero text-center">
+        <div class="container">
+            <h1 class="display-4 fw-bold">🚀 视频音频极速转 MP3 - 免费，全球可用</h1>
+            <p class="lead">
+                将您的视频或音频文件快速转换为高质量 MP3 音频。无需注册，保障隐私安全。
+            </p>
+            
+            <form action="{{ url_for('convert_video') }}" method="post" enctype="multipart/form-data" class="mt-4">
+                <div class="input-group mx-auto" style="max-width: 500px;">
+                    <input type="file" class="form-control form-control-lg" name="file" required>
+                    <button type="submit" class="btn btn-primary btn-lg">
+                        上传并转换 (最大 20MB)
+                    </button>
+                </div>
+                <small class="form-text text-muted mt-2">
+                    文件限制：小于 20MB，支持视频和音频格式。
+                </small>
+            </form>
+        </div>
+    </header>
+
+    <section class="container my-5">
+        <h2 class="text-center mb-4">产品优势</h2>
+        <div class="row text-center">
+            
+            <div class="col-md-3">
+                <div class="feature-icon">💰</div>
+                <h5>产品免费试用 (FREE)</h5>
+                <p>我们承诺永久免费，提供高质量的转换服务。</p>
+            </div>
+            
+            <div class="col-md-3">
+                <div class="feature-icon">📦</div>
+                <h5>文件大小限制</h5>
+                <p>快速处理，支持小于 **20MB** 的文件上传。</p>
+            </div>
+            
+            <div class="col-md-3">
+                <div class="feature-icon">🌍</div>
+                <h5>面向全球用户</h5>
+                <p>支持多语言界面，任何地方都可轻松访问使用。</p>
+            </div>
+            
+            <div class="col-md-3">
+                <div class="feature-icon">🔒</div>
+                <h5>隐私保护</h5>
+                <p>上传和转换后的文件将在 **1 小时内** 自动删除。</p>
+            </div>
+        </div>
+    </section>
+</body>
+</html>

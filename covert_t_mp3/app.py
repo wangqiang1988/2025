@@ -1,36 +1,76 @@
 import os
 import subprocess
-from flask import Flask, request, render_template, send_file, redirect, url_for
+import time
+import threading
+import glob
+from flask import Flask, request, render_template, send_file, redirect, url_for, g
 
 app = Flask(__name__)
 
-# 从环境变量加载配置
+# --- 配置 ---
 app.config['UPLOAD_FOLDER'] = os.environ.get('UPLOAD_FOLDER', '/app/data/uploads')
 app.config['OUTPUT_FOLDER'] = os.environ.get('OUTPUT_FOLDER', '/app/data/outputs')
-# 设置文件大小限制为 20MB
-# 获取环境变量值。如果设置了环境变量，则尝试转换；否则使用默认计算值。
-max_size_env = os.environ.get('MAX_FILE_SIZE')
+# 文件大小限制（已在 Dockerfile 中修复）
+app.config['MAX_CONTENT_LENGTH'] = 20 * 1024 * 1024 # 20MB 默认值
+# 文件保留时间：3600秒 = 1小时
+CLEANUP_INTERVAL = 3600 
 
-if max_size_env:
-    # 如果环境变量被设置，清理字符串并尝试转换
-    try:
-        # 移除空格和注释部分，只保留数字
-        clean_size = max_size_env.split('#')[0].strip()
-        app.config['MAX_CONTENT_LENGTH'] = int(clean_size)
-    except ValueError:
-        # 如果转换失败，使用默认值
-        app.config['MAX_CONTENT_LENGTH'] = 20 * 1024 * 1024 # 20MB 默认值
-else:
-    # 环境变量未设置，直接使用默认计算值
-    app.config['MAX_CONTENT_LENGTH'] = 20 * 1024 * 1024
+# 确保在启动前创建目录
+os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
+os.makedirs(app.config['OUTPUT_FOLDER'], exist_ok=True)
 
-# 简单路由：主页
+
+# --- 异步文件清理函数 ---
+def cleanup_files():
+    """定期扫描上传和输出目录，删除超过保留时间的文件。"""
+    while True:
+        now = time.time()
+        print(f"[{time.strftime('%Y-%m-%d %H:%M:%S', time.localtime())}] Running cleanup task...")
+        
+        folders = [app.config['UPLOAD_FOLDER'], app.config['OUTPUT_FOLDER']]
+        
+        for folder in folders:
+            # 搜索文件夹中的所有文件
+            for filepath in glob.glob(os.path.join(folder, '*')):
+                # 检查文件是否为文件，并且是否超过保留时间
+                if os.path.isfile(filepath):
+                    file_age = now - os.path.getmtime(filepath)
+                    if file_age > CLEANUP_INTERVAL:
+                        try:
+                            os.remove(filepath)
+                            print(f"Cleaned up old file: {filepath}")
+                        except OSError as e:
+                            print(f"Error deleting file {filepath}: {e}")
+                            
+        time.sleep(CLEANUP_INTERVAL) # 每小时执行一次
+
+
+# --- 辅助函数：确定语言 ---
+def get_locale():
+    """根据请求头确定用户偏好的语言"""
+    # 简单的逻辑：检查 Accept-Language 头是否包含 'zh'
+    accept_language = request.headers.get('Accept-Language', '')
+    if 'zh' in accept_language.lower():
+        return 'zh'
+    return 'en'
+
+
+# --- 路由 ---
+
+@app.before_request
+def before_request():
+    """在每个请求前确定语言"""
+    g.locale = get_locale()
+
 @app.route('/')
 def index():
-    # 渲染主页模板，展示功能和上传按钮
-    return render_template('index.html')
+    """主页：根据语言加载不同的模板"""
+    if g.locale == 'zh':
+        return render_template('index_zh.html')
+    # 默认或英文环境使用英文模板
+    return render_template('index_en.html')
 
-# 转换路由：处理文件上传和转换
+
 @app.route('/convert', methods=['POST'])
 def convert_video():
     if 'file' not in request.files:
@@ -41,41 +81,40 @@ def convert_video():
         return "No selected file", 400
 
     if file:
+        # 检查文件类型：允许所有视频或音频文件
+        if not (file.mimetype.startswith('video/') or file.mimetype.startswith('audio/')):
+             return f"Invalid file type: {file.mimetype}. Only video or audio files are supported.", 400
+        
         original_filename = file.filename
         
-        # 1. 检查文件类型（简单的MIME类型检查）
-        if not file.mimetype.startswith('video/'):
-     # 如果不是视频MIME类型，则拒绝
-            return f"Invalid file type: {file.mimetype}. Only video files are supported.", 400
-
-        # 2. 保存上传文件
+        # 1. 保存上传文件
         input_filepath = os.path.join(app.config['UPLOAD_FOLDER'], original_filename)
         file.save(input_filepath)
         
-        # 3. 定义输出路径
-        output_filename = os.path.splitext(original_filename)[0] + '.mp3'
+        # 2. 定义输出路径
+        base_name = os.path.splitext(original_filename)[0]
+        output_filename = base_name + '.mp3'
         output_filepath = os.path.join(app.config['OUTPUT_FOLDER'], output_filename)
         
-        # 4. 调用 FFmpeg 进行转换
+        # 3. 调用 FFmpeg 进行转换
         try:
-            # -i 输入文件
-            # -vn 禁用视频流
-            # -acodec libmp3lame 使用高质量 MP3 编码器
-            # -q:a 2 设定音频质量
+            # -i 输入文件, -vn 禁用视频流, -acodec libmp3lame MP3编码器, -q:a 2 质量
             subprocess.run([
-                'ffmpeg', '-i', input_filepath, '-vn', 
-                '-acodec', 'libmp3lame', '-q:a', '2', 
+                'ffmpeg', '-i', input_filepath, '-acodec', 'libmp3lame', '-q:a', '2', 
                 output_filepath
             ], check=True, capture_output=True, text=True)
             
         except subprocess.CalledProcessError as e:
             # 清理失败的文件
             os.remove(input_filepath)
-            print(f"FFmpeg Error: {e.stderr}")
-            return "Video conversion failed.", 500
+            print(f"!!! FFmpeg Failed !!!")
+            print(f"STDOUT: {e.stdout}") 
+            print(f"STDERR: {e.stderr}")
+            # 返回 FFmpeg 报告的错误信息
+            return f"Conversion failed. FFmpeg reports: {e.stderr}", 500
         
-        # 5. 提供文件下载
-        # 注意：此处提供下载后，建议实现一个异步任务清理 input_filepath 和 output_filepath
+        # 4. 提供文件下载
+        # 注意：文件将在后台清理线程中删除
         return send_file(
             output_filepath, 
             as_attachment=True, 
@@ -83,11 +122,9 @@ def convert_video():
             mimetype='audio/mp3'
         )
 
-# 6. 文件清理 (可选，但推荐)
-# 这是一个更复杂的功能，通常使用后台任务实现，此处省略。
-
 if __name__ == '__main__':
-    # 确保在启动前创建目录
-    os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
-    os.makedirs(app.config['OUTPUT_FOLDER'], exist_ok=True)
+    # 启动后台清理线程
+    cleanup_thread = threading.Thread(target=cleanup_files, daemon=True)
+    cleanup_thread.start()
+    
     app.run(host='0.0.0.0', port=5000)
