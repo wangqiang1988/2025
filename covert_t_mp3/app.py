@@ -44,8 +44,9 @@ def convert_video():
         original_filename = file.filename
         
         # 1. 检查文件类型（简单的MIME类型检查）
-        if file.mimetype != 'video/mp4':
-             return "Invalid file type. Only MP4 is supported.", 400
+        if not file.mimetype.startswith('video/'):
+     # 如果不是视频MIME类型，则拒绝
+            return f"Invalid file type: {file.mimetype}. Only video files are supported.", 400
 
         # 2. 保存上传文件
         input_filepath = os.path.join(app.config['UPLOAD_FOLDER'], original_filename)
