@@ -8,7 +8,21 @@ app = Flask(__name__)
 app.config['UPLOAD_FOLDER'] = os.environ.get('UPLOAD_FOLDER', '/app/data/uploads')
 app.config['OUTPUT_FOLDER'] = os.environ.get('OUTPUT_FOLDER', '/app/data/outputs')
 # 设置文件大小限制为 20MB
-app.config['MAX_CONTENT_LENGTH'] = int(os.environ.get('MAX_FILE_SIZE', 20 * 1024 * 1024))
+# 获取环境变量值。如果设置了环境变量，则尝试转换；否则使用默认计算值。
+max_size_env = os.environ.get('MAX_FILE_SIZE')
+
+if max_size_env:
+    # 如果环境变量被设置，清理字符串并尝试转换
+    try:
+        # 移除空格和注释部分，只保留数字
+        clean_size = max_size_env.split('#')[0].strip()
+        app.config['MAX_CONTENT_LENGTH'] = int(clean_size)
+    except ValueError:
+        # 如果转换失败，使用默认值
+        app.config['MAX_CONTENT_LENGTH'] = 20 * 1024 * 1024 # 20MB 默认值
+else:
+    # 环境变量未设置，直接使用默认计算值
+    app.config['MAX_CONTENT_LENGTH'] = 20 * 1024 * 1024
 
 # 简单路由：主页
 @app.route('/')
