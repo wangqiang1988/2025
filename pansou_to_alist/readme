@@ -49,6 +49,9 @@ Bash
 streamlit run web_app.py
 运行后，在浏览器访问 http://你的IP:8501 即可使用。
 
+# 后台运行并将输出记录到 log.txt
+nohup streamlit run web_app.py > log.txt 2>&1 &
+
 📂 文件结构说明
 web_app.py: Streamlit 网页主程序（前端界面）。
 
