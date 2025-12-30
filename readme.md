@@ -41,6 +41,10 @@
     * quark_auto_save
 ---
 ### filetransmission
-私有文件传输小程序
+一键启动的私有文件传输小程序
 
 * **主要功能：** 可将手机、pc文件传输到当前服务端，再从第三台设备进行下载。
+* **启动服务：**
+```Bash
+docker-compose up -d
+```
